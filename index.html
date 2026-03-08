@@ -3,32 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thodu App</title>
+    <title>THODU - Ride Connect</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: radial-gradient(circle, #1e1b4b, #0f172a); min-height: 100vh; color: white; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .nav-btn { transition: 0.3s; padding: 15px; border-radius: 20px; color: #94a3b8; }
+        .nav-btn.active { background: #ec4899; color: white; }
+    </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="flex flex-col h-screen">
 
-    <div id="loginSection" class="h-screen flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-4xl font-bold text-blue-600 mb-2">Thodu</h1>
-        <p class="text-gray-600 mb-8">Travel together, save money.</p>
-        <button id="googleLoginBtn" class="w-full max-w-sm bg-white border border-gray-300 py-3 rounded-full shadow hover:bg-gray-50 flex items-center justify-center gap-3 font-medium">
-            Sign in with Google
-        </button>
+    <div id="auth-layer" class="flex-1 flex items-center justify-center p-6">
+        <div class="glass p-8 rounded-3xl w-full max-w-sm text-center">
+            <h1 class="text-3xl font-bold mb-6 text-pink-400">THODU LOGIN</h1>
+            <input type="email" id="email" placeholder="Email" class="w-full p-4 mb-3 bg-white/10 rounded-xl outline-none">
+            <input type="password" id="password" placeholder="Password" class="w-full p-4 mb-6 bg-white/10 rounded-xl outline-none">
+            
+            <button id="login-btn" class="w-full bg-pink-500 py-4 rounded-2xl font-bold text-lg hover:bg-pink-600 transition mb-3">LOGIN</button>
+            <button onclick="handleSignup()" class="w-full border border-pink-500 py-4 rounded-2xl font-bold text-lg mb-3">CREATE ACCOUNT</button>
+            <button onclick="forgotPass()" class="text-sm text-pink-300 underline">Forgot Password?</button>
+        </div>
     </div>
 
-    <div id="dashboardSection" class="hidden h-screen flex flex-col">
-        <div id="content" class="flex-1 p-6 overflow-y-auto"></div>
-        
-        <nav class="bg-white border-t flex justify-around p-4 shadow-lg">
-            <button onclick="renderPage('rides')" class="text-blue-600 font-bold">Rides</button>
-            <button onclick="renderPage('profile')" class="text-gray-600">Profile</button>
+    <div id="app-layer" class="hidden flex flex-col h-screen">
+        <div id="view" class="flex-1 p-6 overflow-y-auto"></div>
+        <nav class="glass m-4 p-2 rounded-3xl flex justify-around">
+            <button onclick="render('rides', this)" class="nav-btn active">RIDES</button>
+            <button onclick="render('profile', this)" class="nav-btn">PROFILE</button>
         </nav>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+        // --- PASTE YOUR CONFIG HERE ---
         const firebaseConfig = {
             apiKey: "AIzaSyDXVilX2kfr31h17TgGOUHUbwPG2JXxYr4",
             authDomain: "tff-earns.firebaseapp.com",
@@ -40,42 +50,76 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
 
-        document.getElementById('googleLoginBtn').onclick = () => signInWithPopup(auth, provider);
-
+        // --- AUTH LISTENERS ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                document.getElementById('loginSection').classList.add('hidden');
-                document.getElementById('dashboardSection').classList.remove('hidden');
-                renderPage('rides');
+                document.getElementById('auth-layer').classList.add('hidden');
+                document.getElementById('app-layer').classList.remove('hidden');
+                render('rides');
             } else {
-                document.getElementById('loginSection').classList.remove('hidden');
-                document.getElementById('dashboardSection').classList.add('hidden');
+                document.getElementById('auth-layer').classList.remove('hidden');
+                document.getElementById('app-layer').classList.add('hidden');
             }
         });
 
-        window.renderPage = (page) => {
-            const content = document.getElementById('content');
+        // --- AUTH ACTIONS ---
+        document.getElementById('login-btn').onclick = () => {
+            signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value)
+                .catch(e => alert("Login Error: " + e.message));
+        };
+
+        window.handleSignup = () => {
+            createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value)
+                .catch(e => alert("Signup Error: " + e.message));
+        };
+
+        window.forgotPass = () => {
+            const email = document.getElementById('email').value;
+            if(!email) return alert("Enter email first");
+            sendPasswordResetEmail(auth, email).then(() => alert("Reset link sent to your email!")).catch(e => alert(e.message));
+        };
+
+        window.logout = () => signOut(auth).then(() => location.reload());
+
+        // --- PROFILE RENDERER ---
+        window.render = (tab, btn) => {
+            if(btn) {
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+            const view = document.getElementById('view');
             const user = auth.currentUser;
 
-            if (page === 'profile') {
-                const avatarId = Math.floor(Math.random() * 50) + 1;
-                const photo = user.photoURL || `https://i.pravatar.cc/150?u=${avatarId}`;
-                
-                content.innerHTML = `
-                    <div class="flex flex-col items-center mt-10">
-                        <img src="${photo}" class="w-24 h-24 rounded-full border-4 border-blue-500 mb-4">
-                        <input type="text" value="${user.displayName}" class="text-xl font-bold text-center border-b-2 border-transparent hover:border-blue-500 outline-none mb-6">
-                        <button onclick="logout()" class="text-red-500 font-semibold">Logout</button>
+            if(tab === 'profile') {
+                view.innerHTML = `
+                    <div class="glass p-8 rounded-3xl text-center">
+                        <img src="${user.photoURL || 'https://api.dicebear.com/7.x/adventurer/svg?seed=1'}" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-pink-500">
+                        <h2 class="text-xl font-bold mb-4">${user.displayName || 'Traveler'}</h2>
+                        <div class="grid grid-cols-5 gap-2 my-4 h-32 overflow-y-scroll bg-black/20 p-2 rounded-xl">
+                            ${Array.from({length: 50}, (_, i) => `<img onclick="changeAvatar(${i})" src="https://api.dicebear.com/7.x/avataaars/svg?seed=${i}" class="cursor-pointer hover:scale-110">`).join('')}
+                        </div>
+                        <input type="text" id="newName" placeholder="New Name" class="w-full p-2 mb-2 bg-white/10 rounded-lg text-white">
+                        <button onclick="updateProfileData()" class="w-full bg-pink-500 py-2 rounded-lg mb-4 font-bold">UPDATE</button>
+                        <button onclick="logout()" class="text-red-400 font-bold">LOGOUT</button>
                     </div>
                 `;
             } else {
-                content.innerHTML = `<h2 class="text-2xl font-bold">Available Rides</h2><p class="text-gray-500">No rides yet.</p>`;
+                view.innerHTML = `<h2 class="text-2xl font-bold p-4">Available Rides</h2>`;
             }
         };
 
-        window.logout = () => signOut(auth);
+        window.changeAvatar = async (id) => {
+            const url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${id}`;
+            await updateProfile(auth.currentUser, { photoURL: url });
+            render('profile'); 
+        };
+
+        window.updateProfileData = async () => {
+            const name = document.getElementById('newName').value;
+            await updateProfile(auth.currentUser, { displayName: name });
+            render('profile');
+        };
     </script>
 </body>
 </html>
