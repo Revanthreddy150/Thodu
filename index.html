@@ -1,31 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thodu App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-100 font-sans">
 
-    <div id="loginSection" class="min-h-screen flex items-center justify-center">
-        <div class="bg-white p-8 rounded-xl shadow-lg w-80 text-center">
-            <h2 class="text-2xl font-bold mb-6">Welcome to Thodu</h2>
-            <button id="googleLoginBtn" class="w-full bg-red-500 text-white p-3 rounded-lg font-bold hover:bg-red-600">
-                Sign in with Google
-            </button>
-        </div>
+    <div id="loginSection" class="h-screen flex flex-col items-center justify-center p-6 text-center">
+        <h1 class="text-4xl font-bold text-blue-600 mb-2">Thodu</h1>
+        <p class="text-gray-600 mb-8">Travel together, save money.</p>
+        <button id="googleLoginBtn" class="w-full max-w-sm bg-white border border-gray-300 py-3 rounded-full shadow hover:bg-gray-50 flex items-center justify-center gap-3 font-medium">
+            Sign in with Google
+        </button>
     </div>
 
-    <div id="dashboardSection" class="hidden min-h-screen flex flex-col">
-        <div id="content" class="flex-1 p-6"></div>
-        <nav class="bg-white border-t flex justify-around p-4 shadow-inner">
-            <button onclick="renderPage('rides')">Rides</button>
-            <button onclick="renderPage('profile')">Profile</button>
+    <div id="dashboardSection" class="hidden h-screen flex flex-col">
+        <div id="content" class="flex-1 p-6 overflow-y-auto"></div>
+        
+        <nav class="bg-white border-t flex justify-around p-4 shadow-lg">
+            <button onclick="renderPage('rides')" class="text-blue-600 font-bold">Rides</button>
+            <button onclick="renderPage('profile')" class="text-gray-600">Profile</button>
         </nav>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDXVilX2kfr31h17TgGOUHUbwPG2JXxYr4",
@@ -40,12 +42,8 @@
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
 
-        // Handle Google Login
-        document.getElementById('googleLoginBtn').addEventListener('click', () => {
-            signInWithPopup(auth, provider).catch(error => console.error(error));
-        });
+        document.getElementById('googleLoginBtn').onclick = () => signInWithPopup(auth, provider);
 
-        // Auth State Listener
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 document.getElementById('loginSection').classList.add('hidden');
@@ -59,18 +57,25 @@
 
         window.renderPage = (page) => {
             const content = document.getElementById('content');
+            const user = auth.currentUser;
+
             if (page === 'profile') {
+                const avatarId = Math.floor(Math.random() * 50) + 1;
+                const photo = user.photoURL || `https://i.pravatar.cc/150?u=${avatarId}`;
+                
                 content.innerHTML = `
-                    <h2 class="text-xl font-bold mb-4">Complete Profile</h2>
-                    <input type="text" placeholder="Aadhar Number" class="w-full border p-3 mb-2 rounded">
-                    <label class="block text-sm text-gray-600">Upload License</label>
-                    <input type="file" class="w-full mb-4">
-                    <button class="w-full bg-green-600 text-white p-3 rounded">Save Details</button>
+                    <div class="flex flex-col items-center mt-10">
+                        <img src="${photo}" class="w-24 h-24 rounded-full border-4 border-blue-500 mb-4">
+                        <input type="text" value="${user.displayName}" class="text-xl font-bold text-center border-b-2 border-transparent hover:border-blue-500 outline-none mb-6">
+                        <button onclick="logout()" class="text-red-500 font-semibold">Logout</button>
+                    </div>
                 `;
             } else {
-                content.innerHTML = `<h2 class="text-xl font-bold">Find a Ride</h2>`;
+                content.innerHTML = `<h2 class="text-2xl font-bold">Available Rides</h2><p class="text-gray-500">No rides yet.</p>`;
             }
         };
+
+        window.logout = () => signOut(auth);
     </script>
 </body>
 </html>
