@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Thodu App</title>
+</head>
+<body class="bg-gray-50">
+
+    <div id="loginSection" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-80 text-center">
+            <h2 class="text-2xl font-bold mb-6">Welcome to Thodu</h2>
+            <button id="googleLoginBtn" class="w-full bg-red-500 text-white p-3 rounded-lg font-bold hover:bg-red-600">
+                Sign in with Google
+            </button>
+        </div>
+    </div>
+
+    <div id="dashboardSection" class="hidden min-h-screen flex flex-col">
+        <div id="content" class="flex-1 p-6"></div>
+        <nav class="bg-white border-t flex justify-around p-4 shadow-inner">
+            <button onclick="renderPage('rides')">Rides</button>
+            <button onclick="renderPage('profile')">Profile</button>
+        </nav>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDXVilX2kfr31h17TgGOUHUbwPG2JXxYr4",
+            authDomain: "tff-earns.firebaseapp.com",
+            projectId: "tff-earns",
+            storageBucket: "tff-earns.firebasestorage.app",
+            messagingSenderId: "762695597074",
+            appId: "1:762695597074:web:8d1b687d04af6a74b26ccb"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // Handle Google Login
+        document.getElementById('googleLoginBtn').addEventListener('click', () => {
+            signInWithPopup(auth, provider).catch(error => console.error(error));
+        });
+
+        // Auth State Listener
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                renderPage('rides');
+            } else {
+                document.getElementById('loginSection').classList.remove('hidden');
+                document.getElementById('dashboardSection').classList.add('hidden');
+            }
+        });
+
+        window.renderPage = (page) => {
+            const content = document.getElementById('content');
+            if (page === 'profile') {
+                content.innerHTML = `
+                    <h2 class="text-xl font-bold mb-4">Complete Profile</h2>
+                    <input type="text" placeholder="Aadhar Number" class="w-full border p-3 mb-2 rounded">
+                    <label class="block text-sm text-gray-600">Upload License</label>
+                    <input type="file" class="w-full mb-4">
+                    <button class="w-full bg-green-600 text-white p-3 rounded">Save Details</button>
+                `;
+            } else {
+                content.innerHTML = `<h2 class="text-xl font-bold">Find a Ride</h2>`;
+            }
+        };
+    </script>
+</body>
+</html>
