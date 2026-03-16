@@ -1,125 +1,1382 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THODU - Ride Connect</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background: radial-gradient(circle, #1e1b4b, #0f172a); min-height: 100vh; color: white; }
-        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .nav-btn { transition: 0.3s; padding: 15px; border-radius: 20px; color: #94a3b8; }
-        .nav-btn.active { background: #ec4899; color: white; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thodu – Real-time Journey</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    :root{
+      --primary:#28a745;--primary-light:rgba(40,167,69,.12);
+      --danger:#dc3545;--warn:#ffc107;--dark:#1a1a1a;
+      --gray:#6c757d;--light-bg:#f4f6f9;--white:#fff;
+      --radius:16px;--shadow:0 6px 24px rgba(0,0,0,.08);
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body,html{width:100%;height:100%;font-family:'Poppins',sans-serif;background:#fff;overflow:hidden;}
+    .screen{display:none;width:100%;height:100vh;position:absolute;top:0;left:0;
+            flex-direction:column;align-items:center;justify-content:center;}
+    .active{display:flex!important;}
+
+    /* ── SPLASH ── */
+    #splash-screen{background:linear-gradient(135deg,#fff 0%,#e8f5e9 100%);}
+    .brand-wrap{text-align:center;}
+    .brand-name{display:flex;justify-content:center;font-size:5rem;font-weight:900;
+                font-family:'Montserrat',sans-serif;color:var(--dark);}
+    .letter{display:inline-block;opacity:0;}
+    .l-T{animation:fromLeft .7s forwards .6s}
+    .l-H{animation:fromBot .7s forwards .8s}
+    .l-O{animation:zoomIn  .7s forwards 1s}
+    .l-D{animation:fadeIn  .7s forwards 1.2s}
+    .l-U{animation:fromRight .7s forwards 1.4s}
+    @keyframes fromLeft {from{opacity:0;transform:translateX(-70px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes fromBot  {from{opacity:0;transform:translateY(60px)} to{opacity:1;transform:translateY(0)}}
+    @keyframes zoomIn   {from{opacity:0;transform:scale(.2)}        to{opacity:1;transform:scale(1)}}
+    @keyframes fadeIn   {from{opacity:0}                            to{opacity:1}}
+    @keyframes fromRight{from{opacity:0;transform:translateX(70px)} to{opacity:1;transform:translateX(0)}}
+    .brand-green{color:var(--primary)!important;transition:color .5s;}
+    .tagline{margin-top:14px;font-size:.95rem;color:#888;letter-spacing:.5px;opacity:0;
+             animation:fadeIn .8s forwards 2.4s;}
+    .splash-dot{width:8px;height:8px;border-radius:50%;background:var(--primary);
+                display:inline-block;margin:0 3px;opacity:0;}
+    .dot1{animation:fadeIn .4s forwards 2s}
+    .dot2{animation:fadeIn .4s forwards 2.2s}
+    .dot3{animation:fadeIn .4s forwards 2.4s}
+
+    /* ── AUTH ── */
+    #login-screen{background:linear-gradient(160deg,#e8f5e9 0%,#f4f6f9 100%);}
+    .auth-card{width:88%;max-width:400px;padding:36px 28px;background:#fff;
+               border-radius:28px;box-shadow:0 20px 60px rgba(0,0,0,.12);}
+    .auth-logo{font-family:'Montserrat',sans-serif;font-size:1.8rem;font-weight:900;
+               color:var(--primary);text-align:center;margin-bottom:6px;}
+    .auth-sub{text-align:center;color:var(--gray);font-size:.85rem;margin-bottom:24px;}
+    .auth-card h2{font-family:'Montserrat',sans-serif;margin-bottom:20px;
+                  font-size:1.4rem;color:var(--dark);}
+    .field-group{margin-bottom:14px;}
+    .field-label{font-size:.78rem;font-weight:600;color:var(--gray);
+                  text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;display:block;}
+    .field-wrap{position:relative;}
+    .field-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:1rem;}
+    input{width:100%;padding:13px 13px 13px 40px;border:2px solid #eee;
+          border-radius:13px;font-family:'Poppins',sans-serif;font-size:.92rem;
+          outline:none;transition:border-color .2s,box-shadow .2s;}
+    input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light);}
+    input.no-icon{padding-left:13px;}
+    .btn{width:100%;padding:14px;border:none;border-radius:13px;font-weight:600;
+         font-family:'Poppins',sans-serif;font-size:.97rem;cursor:pointer;
+         transition:.25s;margin-top:6px;}
+    .btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 18px rgba(40,167,69,.35);}
+    .btn-primary:hover{background:#218838;transform:translateY(-1px);}
+    .btn-primary:disabled{background:#aaa;box-shadow:none;cursor:not-allowed;transform:none;}
+    .btn-outline{background:#fff;color:var(--danger);border:2px solid var(--danger);}
+    .auth-switch{text-align:center;margin-top:18px;color:var(--gray);font-size:.87rem;}
+    .link{color:var(--primary);cursor:pointer;font-weight:600;}
+    .link:hover{text-decoration:underline;}
+
+    /* ── HOME ── */
+    #home-screen{justify-content:flex-start;background:var(--light-bg);padding:0;}
+    .home-body{flex:1;width:100%;overflow-y:auto;padding:16px 16px 88px;}
+    .top-bar{width:100%;background:#fff;padding:14px 18px;
+             display:flex;align-items:center;justify-content:space-between;
+             box-shadow:0 2px 12px rgba(0,0,0,.07);position:sticky;top:0;z-index:50;}
+    .top-bar-brand{font-family:'Montserrat',sans-serif;font-weight:900;
+                   font-size:1.3rem;color:var(--primary);}
+    .loc-chip{display:flex;align-items:center;gap:6px;background:var(--light-bg);
+              padding:7px 12px;border-radius:20px;font-size:.8rem;color:var(--dark);
+              font-weight:500;cursor:pointer;max-width:200px;overflow:hidden;
+              white-space:nowrap;text-overflow:ellipsis;}
+
+    /* search */
+    .search-bar{background:#fff;border-radius:14px;padding:10px 14px;
+                display:flex;align-items:center;gap:8px;box-shadow:var(--shadow);
+                margin-bottom:16px;border:2px solid #eee;}
+    .search-bar input{border:none;box-shadow:none;padding:0;font-size:.9rem;
+                      background:transparent;flex:1;}
+    .search-bar input:focus{border:none;box-shadow:none;}
+
+    /* section */
+    .sec-header{display:flex;align-items:center;justify-content:space-between;
+                margin-bottom:12px;}
+    .sec-title{font-family:'Montserrat',sans-serif;font-size:1.15rem;
+                font-weight:700;color:var(--dark);}
+    .sec-count{background:var(--primary-light);color:var(--primary);
+                padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:700;}
+
+    /* ride card */
+    .ride-card{background:#fff;border-radius:var(--radius);padding:16px;
+                margin-bottom:12px;box-shadow:var(--shadow);
+                border-left:4px solid var(--primary);transition:.2s;cursor:pointer;}
+    .ride-card:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.1);}
+    .ride-route{font-weight:700;font-size:.98rem;color:var(--dark);margin-bottom:8px;
+                display:flex;align-items:center;gap:6px;}
+    .ride-arrow{color:var(--primary);font-weight:900;}
+    .ride-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+    .pill{background:var(--light-bg);padding:4px 10px;border-radius:20px;
+          font-size:.76rem;font-weight:600;color:var(--gray);}
+    .pill.g{background:var(--primary-light);color:var(--primary);}
+    .pill.b{background:#e8f4fd;color:#0d6efd;}
+    .pill.y{background:#fff3cd;color:#856404;}
+    .ride-footer{display:flex;align-items:center;justify-content:space-between;}
+    .price-tag{font-size:1.1rem;font-weight:700;color:var(--primary);}
+    .book-btn{padding:8px 18px;background:var(--primary);color:#fff;border:none;
+              border-radius:10px;font-family:'Poppins',sans-serif;font-weight:600;
+              font-size:.82rem;cursor:pointer;transition:.2s;}
+    .book-btn:hover{background:#218838;}
+    .book-btn:disabled{background:#ccc;cursor:not-allowed;}
+
+    /* my rides */
+    .my-ride-card{background:#fff;border-radius:var(--radius);padding:16px;
+                  margin-bottom:12px;box-shadow:var(--shadow);border-top:4px solid var(--primary);}
+    .my-ride-card.cancelled{border-top-color:var(--danger);opacity:.7;}
+    .status-badge{display:inline-block;padding:3px 10px;border-radius:20px;
+                  font-size:.72rem;font-weight:700;text-transform:uppercase;}
+    .st-active{background:#d1e7dd;color:#0a3622;}
+    .st-cancelled{background:#f8d7da;color:#842029;}
+
+    /* profile */
+    .profile-top{text-align:center;padding:28px 0 20px;}
+    .avatar{width:80px;height:80px;border-radius:50%;background:var(--primary);
+            display:flex;align-items:center;justify-content:center;
+            font-size:2rem;font-weight:700;color:#fff;margin:0 auto 12px;
+            box-shadow:0 4px 16px rgba(40,167,69,.35);}
+    .p-name{font-size:1.25rem;font-weight:700;color:var(--dark);}
+    .p-email{color:var(--gray);font-size:.83rem;margin-top:3px;}
+    .verified-badge{display:inline-flex;align-items:center;gap:5px;
+                    background:var(--primary-light);color:var(--primary);
+                    padding:5px 14px;border-radius:20px;font-size:.8rem;
+                    font-weight:700;margin-top:10px;}
+    .doc-section-label{font-size:.78rem;font-weight:700;color:var(--gray);
+                       text-transform:uppercase;letter-spacing:.5px;
+                       margin-bottom:10px;margin-top:4px;}
+    .doc-card{background:#fff;border-radius:var(--radius);padding:16px;
+              margin-bottom:12px;box-shadow:var(--shadow);display:flex;
+              align-items:center;gap:12px;cursor:pointer;transition:.2s;
+              border:2px dashed #e0e0e0;}
+    .doc-card:hover{border-color:var(--primary);transform:translateY(-1px);}
+    .doc-card.st-pending{border:2px solid var(--warn);}
+    .doc-card.st-verified{border:2px solid var(--primary);}
+    .doc-card.st-rejected{border:2px solid var(--danger);}
+    .doc-icon-box{width:46px;height:46px;border-radius:12px;background:var(--light-bg);
+                  display:flex;align-items:center;justify-content:center;
+                  font-size:1.4rem;flex-shrink:0;}
+    .doc-info{flex:1;min-width:0;}
+    .doc-title{font-weight:600;font-size:.93rem;color:var(--dark);}
+    .doc-sub{font-size:.78rem;color:var(--gray);margin-top:2px;}
+    .doc-badge{padding:3px 10px;border-radius:20px;font-size:.7rem;
+               font-weight:700;text-transform:uppercase;white-space:nowrap;flex-shrink:0;}
+    .db-none{background:#f0f0f0;color:var(--gray);}
+    .db-pending{background:#fff3cd;color:#856404;}
+    .db-verified{background:#d1e7dd;color:#0a3622;}
+    .db-rejected{background:#f8d7da;color:#842029;}
+    .doc-thumb{width:42px;height:42px;border-radius:10px;object-fit:cover;flex-shrink:0;}
+    .prog-wrap{height:5px;background:#eee;border-radius:10px;margin-top:8px;}
+    .prog-bar{height:5px;background:var(--primary);border-radius:10px;
+              width:0%;transition:width .3s;}
+    .logout-btn{width:100%;padding:14px;background:#fff5f5;color:var(--danger);
+                border:2px solid var(--danger);border-radius:14px;
+                font-family:'Poppins',sans-serif;font-weight:600;font-size:.95rem;
+                cursor:pointer;margin-top:20px;transition:.2s;}
+    .logout-btn:hover{background:var(--danger);color:#fff;}
+
+    /* ── ADD RIDE ── */
+    #add-ride-screen{justify-content:flex-start;background:var(--light-bg);overflow-y:auto;}
+    .ar-header{width:100%;background:#fff;padding:16px 18px;display:flex;
+               align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.07);
+               position:sticky;top:0;z-index:10;flex-shrink:0;}
+    .back-btn{width:38px;height:38px;border-radius:50%;background:var(--light-bg);
+              border:none;font-size:1.1rem;cursor:pointer;display:flex;
+              align-items:center;justify-content:center;transition:.2s;}
+    .back-btn:hover{background:#e0e0e0;}
+    .ar-title{font-family:'Montserrat',sans-serif;font-size:1.2rem;font-weight:900;}
+    .ar-body{width:100%;padding:18px;padding-bottom:40px;}
+    .form-card{background:#fff;border-radius:var(--radius);padding:18px;
+               margin-bottom:16px;box-shadow:var(--shadow);}
+    .form-label{font-size:.78rem;font-weight:700;color:var(--gray);
+                text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;display:block;}
+    .loc-wrap{position:relative;margin-bottom:10px;}
+    .loc-wrap:last-child{margin-bottom:0;}
+    .loc-wrap input{padding-left:38px;border:2px solid #eee;border-radius:12px;}
+    .loc-wrap input:focus{border-color:var(--primary);}
+    .loc-dot{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:.9rem;}
+    .row-inputs{display:flex;gap:10px;}
+    .row-inputs .field-group{flex:1;}
+    .row-inputs input{padding-left:13px;}
+    .price-wrap{position:relative;}
+    .price-wrap input{padding-left:30px;}
+    .price-sym{position:absolute;left:12px;top:50%;transform:translateY(-50%);
+               font-weight:700;color:var(--gray);}
+    .veh-grid{display:flex;gap:10px;}
+    .veh-btn{flex:1;padding:14px 6px;border:2px solid #eee;border-radius:14px;
+             background:#fff;cursor:pointer;text-align:center;transition:.2s;
+             font-family:'Poppins',sans-serif;}
+    .veh-icon{font-size:1.7rem;display:block;margin-bottom:4px;}
+    .veh-label{font-size:.76rem;font-weight:600;color:var(--gray);}
+    .veh-btn.sel{border-color:var(--primary);background:var(--primary-light);}
+    .veh-btn.sel .veh-label{color:var(--primary);}
+    .spaces-row{display:flex;gap:8px;flex-wrap:wrap;}
+    .sp-btn{width:46px;height:46px;border-radius:50%;border:2px solid #eee;
+            background:#fff;cursor:pointer;font-weight:700;font-size:.95rem;
+            transition:.2s;font-family:'Poppins',sans-serif;}
+    .sp-btn.sel{border-color:var(--primary);background:var(--primary);color:#fff;}
+    .map-mode-bar{display:flex;gap:8px;margin-bottom:10px;}
+    .mode-btn{flex:1;padding:9px;border-radius:12px;border:2px solid #eee;
+              background:#fff;font-family:'Poppins',sans-serif;font-weight:600;
+              font-size:.83rem;cursor:pointer;transition:.2s;display:flex;
+              align-items:center;justify-content:center;gap:5px;}
+    .mode-btn.active-mode{border-color:var(--primary);background:var(--primary);color:#fff;}
+    #ride-map{width:100%;height:260px;border-radius:var(--radius);overflow:hidden;z-index:1;}
+    .map-hint{font-size:.76rem;color:var(--gray);text-align:center;margin-top:6px;}
+    .submit-btn{width:100%;padding:16px;background:var(--primary);color:#fff;
+                border:none;border-radius:14px;font-family:'Poppins',sans-serif;
+                font-size:1rem;font-weight:700;cursor:pointer;margin-top:8px;
+                box-shadow:0 4px 16px rgba(40,167,69,.35);transition:.2s;}
+    .submit-btn:hover{background:#218838;}
+    .submit-btn:disabled{background:#ccc;box-shadow:none;cursor:not-allowed;}
+
+    /* ── ADMIN ── */
+    #admin-screen{justify-content:flex-start;background:var(--light-bg);overflow-y:auto;}
+    .admin-user-card{background:#fff;border-radius:var(--radius);padding:16px;
+                      margin-bottom:14px;box-shadow:var(--shadow);}
+    .admin-user-name{font-weight:700;font-size:1rem;color:var(--dark);margin-bottom:12px;}
+    .admin-doc-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;
+                    padding:10px;background:var(--light-bg);border-radius:12px;}
+    .admin-doc-thumb{width:56px;height:56px;border-radius:10px;object-fit:cover;
+                      border:2px solid #ddd;flex-shrink:0;}
+    .admin-doc-info{flex:1;min-width:0;}
+    .admin-doc-type{font-weight:600;font-size:.88rem;color:var(--dark);}
+    .admin-doc-status{font-size:.76rem;color:var(--gray);}
+    .admin-actions{display:flex;gap:6px;flex-shrink:0;}
+    .approve-btn{padding:8px 12px;background:#d1e7dd;color:#0a3622;border:none;
+                  border-radius:8px;font-weight:700;cursor:pointer;font-size:.78rem;
+                  font-family:'Poppins',sans-serif;transition:.2s;}
+    .approve-btn:hover{background:var(--primary);color:#fff;}
+    .reject-btn{padding:8px 12px;background:#f8d7da;color:#842029;border:none;
+                border-radius:8px;font-weight:700;cursor:pointer;font-size:.78rem;
+                font-family:'Poppins',sans-serif;transition:.2s;}
+    .reject-btn:hover{background:var(--danger);color:#fff;}
+
+    /* ── BOTTOM NAV ── */
+    .bottom-nav{width:100%;height:70px;background:#fff;border-top:1px solid #eee;
+                display:flex;position:fixed;bottom:0;z-index:100;
+                box-shadow:0 -4px 20px rgba(0,0,0,.06);}
+    .nav-item{flex:1;display:flex;flex-direction:column;justify-content:center;
+              align-items:center;color:#ccc;cursor:pointer;font-size:.74rem;
+              transition:color .2s;gap:2px;}
+    .nav-item span:first-child{font-size:1.25rem;}
+    .nav-active{color:var(--primary);font-weight:600;}
+
+    /* ── FAB ── */
+    #fab-btn{position:fixed;bottom:86px;right:18px;width:56px;height:56px;
+              border-radius:50%;background:var(--primary);color:#fff;border:none;
+              font-size:1.8rem;box-shadow:0 6px 22px rgba(40,167,69,.45);
+              cursor:pointer;z-index:200;display:none;align-items:center;
+              justify-content:center;transition:.2s;}
+    #fab-btn:hover{transform:scale(1.08);}
+    #fab-btn:active{transform:scale(.92);}
+
+    /* ── MODAL ── */
+    .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;
+                    background:rgba(0,0,0,.55);display:flex;align-items:center;
+                    justify-content:center;z-index:9999;padding:20px;}
+    .modal-box{background:#fff;border-radius:24px;padding:30px 24px;
+                max-width:340px;width:100%;text-align:center;
+                box-shadow:0 20px 60px rgba(0,0,0,.2);animation:zoomIn .25s ease;}
+    .modal-icon{font-size:3rem;margin-bottom:10px;}
+    .modal-box h3{font-family:'Montserrat',sans-serif;margin-bottom:8px;font-size:1.2rem;}
+    .modal-box p{color:var(--gray);font-size:.87rem;line-height:1.6;margin-bottom:18px;}
+    .modal-actions{display:flex;gap:10px;}
+    .modal-actions button{flex:1;padding:12px;border-radius:12px;border:none;
+                          font-family:'Poppins',sans-serif;font-weight:600;cursor:pointer;
+                          font-size:.88rem;}
+    .m-primary{background:var(--primary);color:#fff;}
+    .m-secondary{background:#f0f0f0;color:var(--dark);}
+
+    /* ── TOAST ── */
+    #toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+            background:rgba(26,26,26,.92);color:#fff;padding:11px 22px;
+            border-radius:30px;font-size:.86rem;font-weight:500;z-index:9998;
+            opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;
+            max-width:90%;}
+    #toast.show{opacity:1;}
+
+    /* ── EMPTY STATE ── */
+    .empty-state{text-align:center;padding:50px 20px;color:var(--gray);}
+    .empty-icon{font-size:3.5rem;margin-bottom:14px;}
+
+    /* ── LOADING ── */
+    .loading-dots::after{content:'...';animation:dots 1.2s steps(4,end) infinite;}
+    @keyframes dots{0%,20%{content:''}40%{content:'.'}60%{content:'..'}80%,100%{content:'...'}}
+
+    /* ── MAP MARKERS ── */
+    .m-start{width:20px;height:20px;background:#28a745;border:3px solid #fff;
+              border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.4);}
+    .m-end{width:20px;height:20px;background:#dc3545;border:3px solid #fff;
+              border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.4);}
+    .leaflet-container{font-family:'Poppins',sans-serif;}
+
+    /* ── VERIFY WAITING ── */
+    .verify-wrap{text-align:center;padding:10px 0;}
+    .verify-wrap .big-icon{font-size:4rem;margin-bottom:16px;}
+    .verify-wrap h2{font-family:'Montserrat',sans-serif;margin-bottom:10px;}
+    .verify-wrap p{color:var(--gray);font-size:.88rem;line-height:1.65;margin-bottom:22px;}
+
+    /* scrollbar */
+    ::-webkit-scrollbar{width:4px;}
+    ::-webkit-scrollbar-track{background:transparent;}
+    ::-webkit-scrollbar-thumb{background:#ccc;border-radius:10px;}
+  </style>
 </head>
-<body class="flex flex-col h-screen">
+<body>
 
-    <div id="auth-layer" class="flex-1 flex items-center justify-center p-6">
-        <div class="glass p-8 rounded-3xl w-full max-w-sm text-center">
-            <h1 class="text-3xl font-bold mb-6 text-pink-400">THODU LOGIN</h1>
-            <input type="email" id="email" placeholder="Email" class="w-full p-4 mb-3 bg-white/10 rounded-xl outline-none">
-            <input type="password" id="password" placeholder="Password" class="w-full p-4 mb-6 bg-white/10 rounded-xl outline-none">
-            
-            <button id="login-btn" class="w-full bg-pink-500 py-4 rounded-2xl font-bold text-lg hover:bg-pink-600 transition mb-3">LOGIN</button>
-            <button onclick="handleSignup()" class="w-full border border-pink-500 py-4 rounded-2xl font-bold text-lg mb-3">CREATE ACCOUNT</button>
-            <button onclick="forgotPass()" class="text-sm text-pink-300 underline">Forgot Password?</button>
+<div id="splash-screen" class="screen active">
+  <div class="brand-wrap">
+    <div class="brand-name">
+      <span class="letter l-T">T</span>
+      <span class="letter l-H">H</span>
+      <span class="letter l-O">O</span>
+      <span class="letter l-D">D</span>
+      <span class="letter l-U">U</span>
+    </div>
+    <div>
+      <span class="splash-dot dot1">●</span>
+      <span class="splash-dot dot2">●</span>
+      <span class="splash-dot dot3">●</span>
+    </div>
+    <p class="tagline">mee prayanam maa bhadyatha</p>
+  </div>
+</div>
+
+<div id="login-screen" class="screen">
+  <div class="auth-card" id="auth-container"></div>
+</div>
+
+<div id="home-screen" class="screen">
+  <div class="top-bar">
+    <span class="top-bar-brand">THODU</span>
+    <div class="loc-chip" onclick="getMyLocation()">
+      📍 <span id="loc-text">Getting location…</span>
+    </div>
+  </div>
+  <div class="home-body" id="home-body"></div>
+  <button id="fab-btn" onclick="handleFABClick()">＋</button>
+  <nav class="bottom-nav" id="bottom-nav">
+    <div class="nav-item nav-active" id="nav-rides"    onclick="switchTab('rides',this)">
+      <span>🚗</span><span>Rides</span>
+    </div>
+    <div class="nav-item" id="nav-my-rides"            onclick="switchTab('my-rides',this)">
+      <span>📋</span><span>My Rides</span>
+    </div>
+    <div class="nav-item" id="nav-profile"              onclick="switchTab('profile',this)">
+      <span>👤</span><span>Profile</span>
+    </div>
+    <div class="nav-item" id="nav-admin" style="display:none;" onclick="switchTab('admin',this)">
+      <span>🛡️</span><span>Admin</span>
+    </div>
+  </nav>
+</div>
+
+<div id="add-ride-screen" class="screen">
+  <div class="ar-header">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <span class="ar-title">Add a Ride</span>
+  </div>
+  <div class="ar-body">
+
+    <div class="form-card">
+      <label class="form-label">📍 From – To</label>
+      <div class="loc-wrap">
+        <span class="loc-dot">🟢</span>
+        <input type="text" id="from-input" placeholder="Starting location"/>
+      </div>
+      <div class="loc-wrap">
+        <span class="loc-dot">🔴</span>
+        <input type="text" id="to-input" placeholder="Destination"/>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="row-inputs">
+        <div class="field-group">
+          <label class="form-label">📅 Date</label>
+          <input type="date" id="ride-date" class="no-icon" style="padding:13px;"/>
         </div>
+        <div class="field-group">
+          <label class="form-label">⏰ Time</label>
+          <input type="time" id="ride-time" class="no-icon" style="padding:13px;"/>
+        </div>
+      </div>
     </div>
 
-    <div id="app-layer" class="hidden flex flex-col h-screen">
-        <div id="view" class="flex-1 p-6 overflow-y-auto"></div>
-        <nav class="glass m-4 p-2 rounded-3xl flex justify-around">
-            <button onclick="render('rides', this)" class="nav-btn active">RIDES</button>
-            <button onclick="render('profile', this)" class="nav-btn">PROFILE</button>
-        </nav>
+    <div class="form-card">
+      <label class="form-label">🚘 Vehicle Type</label>
+      <div class="veh-grid">
+        <button class="veh-btn" id="veh-bike" onclick="selectVehicle('bike',this)">
+          <span class="veh-icon">🏍️</span><span class="veh-label">Bike</span>
+        </button>
+        <button class="veh-btn" id="veh-auto" onclick="selectVehicle('auto',this)">
+          <span class="veh-icon">🛺</span><span class="veh-label">Auto</span>
+        </button>
+        <button class="veh-btn" id="veh-car" onclick="selectVehicle('car',this)">
+          <span class="veh-icon">🚗</span><span class="veh-label">Car</span>
+        </button>
+      </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    <div class="form-card">
+      <label class="form-label">🪑 Available Spaces</label>
+      <div class="spaces-row" id="spaces-row">
+        <button class="sp-btn" onclick="selectSpace(1,this)">1</button>
+        <button class="sp-btn" onclick="selectSpace(2,this)">2</button>
+        <button class="sp-btn" onclick="selectSpace(3,this)">3</button>
+        <button class="sp-btn" onclick="selectSpace(4,this)">4</button>
+        <button class="sp-btn" onclick="selectSpace(5,this)">5</button>
+        <button class="sp-btn" onclick="selectSpace(6,this)">6</button>
+      </div>
+    </div>
 
-        // --- PASTE YOUR CONFIG HERE ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyDXVilX2kfr31h17TgGOUHUbwPG2JXxYr4",
-            authDomain: "tff-earns.firebaseapp.com",
-            projectId: "tff-earns",
-            storageBucket: "tff-earns.firebasestorage.app",
-            messagingSenderId: "762695597074",
-            appId: "1:762695597074:web:8d1b687d04af6a74b26ccb"
-        };
+    <div class="form-card">
+      <label class="form-label">💰 Price Per Seat (₹)</label>
+      <div class="price-wrap">
+        <span class="price-sym">₹</span>
+        <input type="number" id="ride-price" class="no-icon"
+               style="padding:13px 13px 13px 28px;" placeholder="0 = Free"/>
+      </div>
+    </div>
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+    <div class="form-card">
+      <label class="form-label">🗺️ Mark Route on Map</label>
+      <div class="map-mode-bar">
+        <button class="mode-btn active-mode" id="mode-start" onclick="setMapMode('start')">
+          🟢 Set Start
+        </button>
+        <button class="mode-btn" id="mode-end" onclick="setMapMode('end')">
+          🔴 Set End
+        </button>
+      </div>
+      <div id="ride-map"></div>
+      <p class="map-hint">Tap the map to place Start 🟢 and End 🔴 pins</p>
+    </div>
 
-        // --- AUTH LISTENERS ---
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                document.getElementById('auth-layer').classList.add('hidden');
-                document.getElementById('app-layer').classList.remove('hidden');
-                render('rides');
-            } else {
-                document.getElementById('auth-layer').classList.remove('hidden');
-                document.getElementById('app-layer').classList.add('hidden');
-            }
+    <button class="submit-btn" id="submit-ride-btn" onclick="submitRide()">
+      🚀 Post Ride
+    </button>
+  </div>
+</div>
+
+<div id="admin-screen" class="screen">
+  <div class="ar-header">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <span class="ar-title">🛡️ Admin Panel</span>
+  </div>
+  <div class="ar-body" id="admin-body">
+    <div class="empty-state"><div class="empty-icon">⏳</div><p>Loading…</p></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module">
+import { initializeApp }
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword,
+         signInWithEmailAndPassword, sendEmailVerification,
+         updateProfile, onAuthStateChanged, signOut, reload }
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc,
+         collection, onSnapshot, addDoc, getDocs,
+         serverTimestamp, query, where, orderBy }
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getStorage, ref as sRef,
+         uploadBytesResumable, getDownloadURL }
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+/* ── FIREBASE CONFIG ── */
+const app = initializeApp({
+  apiKey:            "AIzaSyA1QeDf1E_Kb1ZC15ahw1dY8hk3J0gXopY",
+  authDomain:        "thodu-65cb9.firebaseapp.com",
+  projectId:         "thodu-65cb9",
+  storageBucket:     "thodu-65cb9.firebasestorage.app",
+  messagingSenderId: "1070229943496",
+  appId:             "1:1070229943496:web:038e2e74c463e7acefa1fd"
+});
+const auth    = getAuth(app);
+const db      = getFirestore(app);
+const storage = getStorage(app);
+
+const ADMIN_EMAIL = "admin@thodu.com";
+
+/* ── STATE ── */
+let currentUser     = null;
+let userData        = null;
+let activeTab       = 'rides';
+let userUnsub       = null;
+let ridesUnsub      = null;
+let myRidesUnsub    = null;
+let verifyInterval  = null;
+let mapInstance     = null;
+let startMarker     = null;
+let endMarker       = null;
+let routeLine       = null;
+let mapMode         = 'start';
+let selectedVehicle = null;
+let selectedSpaces  = null;
+let startPoint      = null;
+let endPoint        = null;
+
+/* ════════════════════ UTILITIES ════════════════════ */
+function showToast(msg, dur = 2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+async function reverseGeocode(lat, lon) {
+  try {
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
+    );
+    const d = await r.json();
+    const a = d.address || {};
+    const area = a.suburb || a.town || a.village || a.city_district || a.city || '';
+    const road = a.road ? a.road + ', ' : '';
+    return (road + area).trim() || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+  } catch {
+    return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+  }
+}
+
+function getInitials(name = '') {
+  return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
+}
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const diff = (Date.now() - d.getTime()) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return d.toLocaleDateString();
+}
+
+/* ════════════════════ LOCATION ════════════════════ */
+window.getMyLocation = () => {
+  const el = document.getElementById('loc-text');
+  if (!el || !navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      el.textContent = 'Locating…';
+      el.textContent = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+    },
+    () => { if (el) el.textContent = 'Location denied'; }
+  );
+};
+
+/* ════════════════════ AUTH ════════════════════ */
+window.setAuthState = (state) => {
+  clearInterval(verifyInterval);
+  const c = document.getElementById('auth-container');
+
+  if (state === 'login') {
+    c.innerHTML = `
+      <div class="auth-logo">THODU</div>
+      <div class="auth-sub">mee prayanam maa bhadyatha</div>
+      <h2>Welcome Back 👋</h2>
+      <div class="field-group">
+        <label class="field-label">Email</label>
+        <div class="field-wrap">
+          <span class="field-icon">📧</span>
+          <input type="email" id="le" placeholder="you@email.com"/>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Password</label>
+        <div class="field-wrap">
+          <span class="field-icon">🔒</span>
+          <input type="password" id="lp" placeholder="••••••••"/>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">Login</button>
+      <p class="auth-switch">New here?
+        <span class="link" onclick="setAuthState('signup')">Create Account</span>
+      </p>`;
+
+  } else if (state === 'signup') {
+    c.innerHTML = `
+      <div class="auth-logo">THODU</div>
+      <div class="auth-sub">Join the community</div>
+      <h2>Create Account</h2>
+      <div class="field-group">
+        <label class="field-label">Full Name</label>
+        <div class="field-wrap">
+          <span class="field-icon">👤</span>
+          <input type="text" id="sn" placeholder="Your full name"/>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Phone Number</label>
+        <div class="field-wrap">
+          <span class="field-icon">📱</span>
+          <input type="tel" id="sp" placeholder="+91 9876543210"/>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Email</label>
+        <div class="field-wrap">
+          <span class="field-icon">📧</span>
+          <input type="email" id="se" placeholder="you@email.com"/>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Password (min 6 chars)</label>
+        <div class="field-wrap">
+          <span class="field-icon">🔒</span>
+          <input type="password" id="spw" placeholder="••••••••"/>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="signupBtn" onclick="doSignup()">
+        Create Account
+      </button>
+      <p class="auth-switch">
+        <span class="link" onclick="setAuthState('login')">← Back to Login</span>
+      </p>`;
+
+  } else if (state === 'verify-waiting') {
+    c.innerHTML = `
+      <div class="verify-wrap">
+        <div class="big-icon">📧</div>
+        <h2>Verify Your Email</h2>
+        <p>A verification link was sent to your inbox.<br>
+           Please check and click the link to activate your account.</p>
+        <button class="btn btn-primary" onclick="checkVerify()" style="margin-bottom:10px;">
+          ✅ I've verified – Continue
+        </button>
+        <button class="btn btn-outline" onclick="handleLogout()">Cancel / Logout</button>
+      </div>`;
+    verifyInterval = setInterval(autoCheckVerify, 3000);
+  }
+};
+
+async function autoCheckVerify() {
+  if (!auth.currentUser) return;
+  await reload(auth.currentUser);
+  if (auth.currentUser.emailVerified) {
+    clearInterval(verifyInterval);
+    bootHome(auth.currentUser);
+  }
+}
+
+window.checkVerify = async () => {
+  if (!auth.currentUser) return;
+  await reload(auth.currentUser);
+  if (auth.currentUser.emailVerified) {
+    clearInterval(verifyInterval);
+    bootHome(auth.currentUser);
+  } else {
+    showToast('⚠️ Email not yet verified. Check your inbox.');
+  }
+};
+
+window.doSignup = async () => {
+  const name  = document.getElementById('sn').value.trim();
+  const phone = document.getElementById('sp').value.trim();
+  const email = document.getElementById('se').value.trim();
+  const pass  = document.getElementById('spw').value;
+  if (!name || !phone || !email || !pass) return showToast('⚠️ Fill all fields');
+  if (pass.length < 6) return showToast('⚠️ Password must be at least 6 characters');
+  const btn = document.getElementById('signupBtn');
+  btn.disabled = true; btn.textContent = 'Creating…';
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    await updateProfile(cred.user, { displayName: name });
+    await sendEmailVerification(cred.user);
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      name, email, phone,
+      licenseStatus: 'none', aadhaarStatus: 'none',
+      licenseUrl: '', aadhaarUrl: '',
+      createdAt: serverTimestamp()
+    });
+    setAuthState('verify-waiting');
+  } catch (e) {
+    showToast('❌ ' + e.message);
+    btn.disabled = false; btn.textContent = 'Create Account';
+  }
+};
+
+window.doLogin = async () => {
+  const email = document.getElementById('le').value.trim();
+  const pass  = document.getElementById('lp').value;
+  if (!email || !pass) return showToast('⚠️ Enter email and password');
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Logging in…';
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+    if (!cred.user.emailVerified) {
+      await sendEmailVerification(cred.user);
+      setAuthState('verify-waiting');
+    }
+  } catch (e) {
+    showToast('❌ ' + e.message);
+    btn.disabled = false; btn.textContent = 'Login';
+  }
+};
+
+window.handleLogout = async () => {
+  clearInterval(verifyInterval);
+  if (userUnsub)     userUnsub();
+  if (ridesUnsub)    ridesUnsub();
+  if (myRidesUnsub)  myRidesUnsub();
+  await signOut(auth);
+  location.reload();
+};
+
+/* ════════════════════ BOOT HOME ════════════════════ */
+function bootHome(user) {
+  currentUser = user;
+  showScreen('home-screen');
+  document.getElementById('fab-btn').style.display = 'flex';
+  if (user.email === ADMIN_EMAIL) {
+    document.getElementById('nav-admin').style.display = 'flex';
+  }
+  startUserListener(user.uid);
+  switchTab('rides', document.getElementById('nav-rides'));
+  getMyLocation();
+}
+
+/* ════════════════════ USER LISTENER ════════════════════ */
+function startUserListener(uid) {
+  if (userUnsub) userUnsub();
+  userUnsub = onSnapshot(doc(db, 'users', uid), snap => {
+    userData = snap.exists() ? { id: snap.id, ...snap.data() }
+                             : { licenseStatus:'none', aadhaarStatus:'none' };
+    if (activeTab === 'profile') renderProfile();
+  });
+}
+
+/* ════════════════════ TAB SWITCH ════════════════════ */
+window.switchTab = (tab, el) => {
+  activeTab = tab;
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('nav-active'));
+  el.classList.add('nav-active');
+  const fab = document.getElementById('fab-btn');
+
+  // stop previous listeners
+  if (tab !== 'rides'    && ridesUnsub)   { ridesUnsub();   ridesUnsub = null; }
+  if (tab !== 'my-rides' && myRidesUnsub) { myRidesUnsub(); myRidesUnsub = null; }
+
+  if (tab === 'rides') {
+    fab.style.display = 'flex';
+    renderRidesTab();
+    startRidesListener();
+  } else if (tab === 'my-rides') {
+    fab.style.display = 'none';
+    renderMyRidesTab();
+    startMyRidesListener();
+  } else if (tab === 'profile') {
+    fab.style.display = 'none';
+    renderProfile();
+  } else if (tab === 'admin') {
+    fab.style.display = 'none';
+    showScreen('admin-screen');
+    loadAdminData();
+  }
+};
+
+/* ════════════════════ RIDES TAB ════════════════════ */
+function renderRidesTab(rides = []) {
+  const body = document.getElementById('home-body');
+  let html = '';
+  if (rides.length === 0) {
+    html = `<div class="empty-state">
+      <div class="empty-icon">🚦</div>
+      <p>No rides available right now.<br>Be the first to add one!</p>
+    </div>`;
+  } else {
+    rides.forEach(r => {
+      const vIcon = r.vehicle === 'bike' ? '🏍️' : r.vehicle === 'auto' ? '🛺' : '🚗';
+      const vName = r.vehicle === 'bike' ? 'Bike' : r.vehicle === 'auto' ? 'Auto' : 'Car';
+      const price = r.price > 0 ? `₹${r.price}` : 'Free';
+      const dateTime = r.date ? `${r.date} ${r.time || ''}` : timeAgo(r.createdAt);
+      const isMine = currentUser && r.userId === currentUser.uid;
+      html += `
+        <div class="ride-card">
+          <div class="ride-route">
+            🟢 ${r.from || '?'}
+            <span class="ride-arrow">→</span>
+            🔴 ${r.to || '?'}
+          </div>
+          <div class="ride-meta">
+            <span class="pill">${vIcon} ${vName}</span>
+            <span class="pill">🪑 ${r.spaces} space${r.spaces > 1 ? 's' : ''}</span>
+            <span class="pill g">👤 ${r.userName || 'Driver'}</span>
+            ${r.date ? `<span class="pill b">📅 ${dateTime.trim()}</span>` : ''}
+            ${r.userPhone ? `<span class="pill">📱 ${r.userPhone}</span>` : ''}
+          </div>
+          <div class="ride-footer">
+            <span class="price-tag">${price} / seat</span>
+            ${!isMine
+              ? `<button class="book-btn" onclick="bookRide('${r.id}','${r.userId}',${r.spaces})">
+                    🎫 Book
+                 </button>`
+              : `<span class="pill g">Your Ride</span>`}
+          </div>
+        </div>`;
+    });
+  }
+  body.innerHTML = `
+    <div class="search-bar">
+      <span>🔍</span>
+      <input type="text" id="search-input" placeholder="Search destination…"
+             oninput="filterRides(this.value)"/>
+    </div>
+    <div class="sec-header">
+      <span class="sec-title">Available Rides</span>
+      <span class="sec-count" id="ride-count">${rides.length}</span>
+    </div>
+    <div id="rides-list">${html}</div>`;
+}
+
+let allRidesCache = [];
+
+function startRidesListener() {
+  if (ridesUnsub) ridesUnsub();
+  const q = query(collection(db, 'rides'), where('status', '==', 'active'));
+  ridesUnsub = onSnapshot(q, snap => {
+    allRidesCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (activeTab === 'rides') renderRidesTab(allRidesCache);
+  }, err => console.warn(err));
+}
+
+window.filterRides = (val) => {
+  const v = val.toLowerCase().trim();
+  const filtered = v
+    ? allRidesCache.filter(r =>
+        (r.to || '').toLowerCase().includes(v) ||
+        (r.from || '').toLowerCase().includes(v))
+    : allRidesCache;
+  document.getElementById('ride-count').textContent = filtered.length;
+  const listEl = document.getElementById('rides-list');
+  if (!listEl) return;
+  if (filtered.length === 0) {
+    listEl.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <p>No rides found for "<b>${val}</b>"</p>
+    </div>`;
+    return;
+  }
+  let html = '';
+  filtered.forEach(r => {
+    const vIcon = r.vehicle === 'bike' ? '🏍️' : r.vehicle === 'auto' ? '🛺' : '🚗';
+    const vName = r.vehicle === 'bike' ? 'Bike' : r.vehicle === 'auto' ? 'Auto' : 'Car';
+    const price = r.price > 0 ? `₹${r.price}` : 'Free';
+    const isMine = currentUser && r.userId === currentUser.uid;
+    html += `
+      <div class="ride-card">
+        <div class="ride-route">🟢 ${r.from||'?'} <span class="ride-arrow">→</span> 🔴 ${r.to||'?'}</div>
+        <div class="ride-meta">
+          <span class="pill">${vIcon} ${vName}</span>
+          <span class="pill">🪑 ${r.spaces}</span>
+          <span class="pill g">👤 ${r.userName||'Driver'}</span>
+          ${r.date ? `<span class="pill b">📅 ${r.date} ${r.time||''}</span>` : ''}
+        </div>
+        <div class="ride-footer">
+          <span class="price-tag">${price} / seat</span>
+          ${!isMine
+            ? `<button class="book-btn" onclick="bookRide('${r.id}','${r.userId}',${r.spaces})">🎫 Book</button>`
+            : `<span class="pill g">Your Ride</span>`}
+        </div>
+      </div>`;
+  });
+  listEl.innerHTML = html;
+};
+
+window.bookRide = async (rideId, driverUid, spaces) => {
+  if (!currentUser) return showToast('⚠️ Please login first');
+  if (spaces < 1) return showToast('❌ No spaces left');
+  try {
+    await addDoc(collection(db, 'bookings'), {
+      rideId, driverId: driverUid,
+      passengerId: currentUser.uid,
+      passengerName: currentUser.displayName || 'Passenger',
+      createdAt: serverTimestamp()
+    });
+    await updateDoc(doc(db, 'rides', rideId), { spaces: spaces - 1 });
+    showToast('🎉 Ride booked successfully!');
+  } catch (e) { showToast('❌ ' + e.message); }
+};
+
+/* ════════════════════ MY RIDES TAB ════════════════════ */
+function renderMyRidesTab(rides = []) {
+  const body = document.getElementById('home-body');
+  let html = '';
+  if (rides.length === 0) {
+    html = `<div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <p>You haven't posted any rides yet.</p>
+    </div>`;
+  } else {
+    rides.forEach(r => {
+      const vIcon = r.vehicle==='bike'?'🏍️':r.vehicle==='auto'?'🛺':'🚗';
+      const price = r.price > 0 ? `₹${r.price}` : 'Free';
+      const isCancelled = r.status === 'cancelled';
+      html += `
+        <div class="my-ride-card ${isCancelled ? 'cancelled' : ''}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div class="ride-route" style="font-size:.95rem;">
+              🟢 ${r.from||'?'} → 🔴 ${r.to||'?'}
+            </div>
+            <span class="status-badge ${isCancelled ? 'st-cancelled' : 'st-active'}">
+              ${isCancelled ? 'Cancelled' : 'Active'}
+            </span>
+          </div>
+          <div class="ride-meta">
+            <span class="pill">${vIcon}</span>
+            <span class="pill">🪑 ${r.spaces}</span>
+            <span class="pill b">💰 ${price}</span>
+            ${r.date ? `<span class="pill">📅 ${r.date}</span>` : ''}
+          </div>
+          ${!isCancelled
+            ? `<button onclick="cancelRide('${r.id}')"
+                style="margin-top:10px;width:100%;padding:10px;background:#fff5f5;
+                       color:var(--danger);border:2px solid var(--danger);border-radius:10px;
+                       font-family:'Poppins',sans-serif;font-weight:600;cursor:pointer;
+                       font-size:.83rem;">
+                🚫 Cancel Ride
+                </button>`
+            : ''}
+        </div>`;
+    });
+  }
+  body.innerHTML = `
+    <div class="sec-header">
+      <span class="sec-title">My Rides</span>
+      <span class="sec-count">${rides.length}</span>
+    </div>
+    ${html}`;
+}
+
+function startMyRidesListener() {
+  if (!currentUser) return;
+  if (myRidesUnsub) myRidesUnsub();
+  const q = query(
+    collection(db, 'rides'),
+    where('userId', '==', currentUser.uid)
+  );
+  myRidesUnsub = onSnapshot(q, snap => {
+    const rides = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (activeTab === 'my-rides') renderMyRidesTab(rides);
+  }, err => console.warn(err));
+}
+
+window.cancelRide = async (rideId) => {
+  if (!confirm('Cancel this ride?')) return;
+  try {
+    await updateDoc(doc(db, 'rides', rideId), { status: 'cancelled' });
+    showToast('🚫 Ride cancelled');
+  } catch (e) { showToast('❌ ' + e.message); }
+};
+
+/* ════════════════════ PROFILE TAB ════════════════════ */
+function renderProfile() {
+  const body = document.getElementById('home-body');
+  const ud   = userData || {};
+  const licSt = ud.licenseStatus  || 'none';
+  const aadSt = ud.aadhaarStatus  || 'none';
+  const bothVerified = licSt === 'verified' && aadSt === 'verified';
+  const name  = currentUser?.displayName || 'User';
+  const email = currentUser?.email || '';
+
+  body.innerHTML = `
+    <div class="profile-top">
+      <div class="avatar">${getInitials(name)}</div>
+      <div class="p-name">${name}</div>
+      <div class="p-email">${email}</div>
+      ${ud.phone ? `<div class="p-email" style="margin-top:3px;">📱 ${ud.phone}</div>` : ''}
+      ${bothVerified ? `<div><span class="verified-badge">✅ Fully Verified</span></div>` : ''}
+    </div>
+
+    <p class="doc-section-label">📄 Document Verification</p>
+
+    <div class="doc-card st-${licSt}" id="lic-card" onclick="triggerUpload('license')">
+      <div class="doc-icon-box">🪪</div>
+      <div class="doc-info" style="overflow:hidden;">
+        <div class="doc-title">Driving Licence</div>
+        <div class="doc-sub" id="lic-sub">
+          ${licSt==='none'    ? 'Tap to upload your licence' :
+            licSt==='pending' ? 'Under admin review…' :
+            licSt==='verified'? 'Verified ✔' :
+                                'Rejected – tap to re-upload'}
+        </div>
+        <div class="prog-wrap" id="lic-prog" style="display:none;">
+          <div class="prog-bar" id="lic-bar"></div>
+        </div>
+      </div>
+      ${ud.licenseUrl  ? `<img class="doc-thumb" src="${ud.licenseUrl}"  alt="Licence"/>` : ''}
+      <span class="doc-badge db-${licSt}">
+        ${licSt==='none'?'Upload':licSt.charAt(0).toUpperCase()+licSt.slice(1)}
+      </span>
+    </div>
+
+    <div class="doc-card st-${aadSt}" id="aad-card" onclick="triggerUpload('aadhaar')">
+      <div class="doc-icon-box">🪪</div>
+      <div class="doc-info" style="overflow:hidden;">
+        <div class="doc-title">Aadhaar Card</div>
+        <div class="doc-sub" id="aad-sub">
+          ${aadSt==='none'    ? 'Tap to upload your Aadhaar' :
+            aadSt==='pending' ? 'Under admin review…' :
+            aadSt==='verified'? 'Verified ✔' :
+                                'Rejected – tap to re-upload'}
+        </div>
+        <div class="prog-wrap" id="aad-prog" style="display:none;">
+          <div class="prog-bar" id="aad-bar"></div>
+        </div>
+      </div>
+      ${ud.aadhaarUrl ? `<img class="doc-thumb" src="${ud.aadhaarUrl}" alt="Aadhaar"/>` : ''}
+      <span class="doc-badge db-${aadSt}">
+        ${aadSt==='none'?'Upload':aadSt.charAt(0).toUpperCase()+aadSt.slice(1)}
+      </span>
+    </div>
+
+    <button class="logout-btn" onclick="handleLogout()">🚪 Logout</button>`;
+}
+
+/* ── DOCUMENT UPLOAD ── */
+window.triggerUpload = (type) => {
+  const ud = userData || {};
+  if (ud[type + 'Status'] === 'verified') {
+    return showToast('✅ Already verified – no action needed');
+  }
+  const input = document.createElement('input');
+  input.type   = 'file';
+  input.accept = 'image/*';
+  input.onchange = e => { if (e.target.files[0]) uploadDoc(type, e.target.files[0]); };
+  input.click();
+};
+
+async function uploadDoc(type, file) {
+  const uid = currentUser.uid;
+  const isLic = type === 'license';
+  const progId = isLic ? 'lic-prog' : 'aad-prog';
+  const barId  = isLic ? 'lic-bar'  : 'aad-bar';
+  const subId  = isLic ? 'lic-sub'  : 'aad-sub';
+
+  // show progress immediately
+  const progEl = document.getElementById(progId);
+  const barEl  = document.getElementById(barId);
+  const subEl  = document.getElementById(subId);
+  if (progEl) progEl.style.display = 'block';
+  if (subEl)  subEl.textContent = 'Uploading…';
+
+  try {
+    const storageRef = sRef(storage, `documents/${uid}/${type}`);
+    const task = uploadBytesResumable(storageRef, file);
+
+    task.on('state_changed',
+      snap => {
+        const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
+        if (barEl) barEl.style.width = pct + '%';
+        if (subEl) subEl.textContent = `Uploading… ${pct}%`;
+      },
+      err => {
+        showToast('❌ Upload failed: ' + err.message);
+        if (subEl) subEl.textContent = 'Upload failed. Tap to retry.';
+        if (progEl) progEl.style.display = 'none';
+      },
+      async () => {
+        const url = await getDownloadURL(task.snapshot.ref);
+        await updateDoc(doc(db, 'users', uid), {
+          [`${type}Url`]:    url,
+          [`${type}Status`]: 'pending'
         });
+        if (progEl) progEl.style.display = 'none';
+        if (subEl)  subEl.textContent    = 'Uploaded! Under admin review…';
+        showToast('📤 Uploaded! Waiting for admin review.');
+      }
+    );
+  } catch (err) {
+    showToast('❌ ' + err.message);
+  }
+}
 
-        // --- AUTH ACTIONS ---
-        document.getElementById('login-btn').onclick = () => {
-            signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value)
-                .catch(e => alert("Login Error: " + e.message));
-        };
+/* ════════════════════ FAB / ACTION ════════════════════ */
+// MODIFIED: ACCESS TO ADD RIDE IS NOW OPEN TO EVERYONE LOGGED IN
+window.handleFABClick = () => {
+  openAddRide();
+};
 
-        window.handleSignup = () => {
-            createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value)
-                .catch(e => alert("Signup Error: " + e.message));
-        };
+/* ════════════════════ ADD RIDE ════════════════════ */
+function openAddRide() {
+  selectedVehicle = null;
+  selectedSpaces  = null;
+  startPoint      = null;
+  endPoint        = null;
+  document.querySelectorAll('.veh-btn').forEach(b => b.classList.remove('sel'));
+  document.querySelectorAll('.sp-btn').forEach(b  => b.classList.remove('sel'));
+  ['from-input','to-input','ride-price'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  // Set today's date / current time as defaults
+  const now = new Date();
+  const dateEl = document.getElementById('ride-date');
+  const timeEl = document.getElementById('ride-time');
+  if (dateEl) dateEl.value = now.toISOString().split('T')[0];
+  if (timeEl) timeEl.value = now.toTimeString().slice(0,5);
 
-        window.forgotPass = () => {
-            const email = document.getElementById('email').value;
-            if(!email) return alert("Enter email first");
-            sendPasswordResetEmail(auth, email).then(() => alert("Reset link sent to your email!")).catch(e => alert(e.message));
-        };
+  showScreen('add-ride-screen');
+  setTimeout(() => {
+    if (!mapInstance) initMap();
+    else {
+      mapInstance.invalidateSize();
+      if (startMarker) { mapInstance.removeLayer(startMarker); startMarker = null; }
+      if (endMarker)   { mapInstance.removeLayer(endMarker);   endMarker   = null; }
+      if (routeLine)   { mapInstance.removeLayer(routeLine);   routeLine   = null; }
+    }
+    setMapMode('start');
+  }, 150);
+}
 
-        window.logout = () => signOut(auth).then(() => location.reload());
+window.goHome = () => {
+  showScreen('home-screen');
+  if (activeTab !== 'admin') {
+    document.getElementById('fab-btn').style.display =
+      activeTab === 'rides' ? 'flex' : 'none';
+  }
+};
 
-        // --- PROFILE RENDERER ---
-        window.render = (tab, btn) => {
-            if(btn) {
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            }
-            const view = document.getElementById('view');
-            const user = auth.currentUser;
+/* ── MAP ── */
+function initMap() {
+  mapInstance = L.map('ride-map', { zoomControl: true }).setView([17.385, 78.4867], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors', maxZoom: 19
+  }).addTo(mapInstance);
 
-            if(tab === 'profile') {
-                view.innerHTML = `
-                    <div class="glass p-8 rounded-3xl text-center">
-                        <img src="${user.photoURL || 'https://api.dicebear.com/7.x/adventurer/svg?seed=1'}" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-pink-500">
-                        <h2 class="text-xl font-bold mb-4">${user.displayName || 'Traveler'}</h2>
-                        <div class="grid grid-cols-5 gap-2 my-4 h-32 overflow-y-scroll bg-black/20 p-2 rounded-xl">
-                            ${Array.from({length: 50}, (_, i) => `<img onclick="changeAvatar(${i})" src="https://api.dicebear.com/7.x/avataaars/svg?seed=${i}" class="cursor-pointer hover:scale-110">`).join('')}
-                        </div>
-                        <input type="text" id="newName" placeholder="New Name" class="w-full p-2 mb-2 bg-white/10 rounded-lg text-white">
-                        <button onclick="updateProfileData()" class="w-full bg-pink-500 py-2 rounded-lg mb-4 font-bold">UPDATE</button>
-                        <button onclick="logout()" class="text-red-400 font-bold">LOGOUT</button>
-                    </div>
-                `;
-            } else {
-                view.innerHTML = `<h2 class="text-2xl font-bold p-4">Available Rides</h2>`;
-            }
-        };
+  navigator.geolocation?.getCurrentPosition(pos => {
+    mapInstance.setView([pos.coords.latitude, pos.coords.longitude], 14);
+  });
 
-        window.changeAvatar = async (id) => {
-            const url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${id}`;
-            await updateProfile(auth.currentUser, { photoURL: url });
-            render('profile'); 
-        };
+  mapInstance.on('click', async e => {
+    const { lat, lng } = e.latlng;
+    if (mapMode === 'start') {
+      if (startMarker) mapInstance.removeLayer(startMarker);
+      startMarker = L.marker([lat, lng], {
+        icon: L.divIcon({ className:'',
+          html: `<div class="m-start"></div>`,
+          iconSize: [20,20], iconAnchor: [10,10] })
+      }).addTo(mapInstance).bindPopup('🟢 Start').openPopup();
+      startPoint = { lat, lng };
+      const name = await reverseGeocode(lat, lng);
+      const fi = document.getElementById('from-input');
+      if (fi) fi.value = name;
+      setMapMode('end');
+    } else {
+      if (endMarker) mapInstance.removeLayer(endMarker);
+      endMarker = L.marker([lat, lng], {
+        icon: L.divIcon({ className:'',
+          html: `<div class="m-end"></div>`,
+          iconSize: [20,20], iconAnchor: [10,10] })
+      }).addTo(mapInstance).bindPopup('🔴 End').openPopup();
+      endPoint = { lat, lng };
+      const name = await reverseGeocode(lat, lng);
+      const ti = document.getElementById('to-input');
+      if (ti) ti.value = name;
+    }
+    drawRoute();
+  });
+}
 
-        window.updateProfileData = async () => {
-            const name = document.getElementById('newName').value;
-            await updateProfile(auth.currentUser, { displayName: name });
-            render('profile');
-        };
-    </script>
+function drawRoute() {
+  if (routeLine) mapInstance.removeLayer(routeLine);
+  if (startPoint && endPoint) {
+    routeLine = L.polyline(
+      [[startPoint.lat, startPoint.lng], [endPoint.lat, endPoint.lng]],
+      { color:'#28a745', weight:4, opacity:.75, dashArray:'10,7' }
+    ).addTo(mapInstance);
+    mapInstance.fitBounds(routeLine.getBounds(), { padding:[40,40] });
+  }
+}
+
+window.setMapMode = (mode) => {
+  mapMode = mode;
+  document.getElementById('mode-start').classList.toggle('active-mode', mode==='start');
+  document.getElementById('mode-end').classList.toggle('active-mode',   mode==='end');
+};
+
+window.selectVehicle = (v, el) => {
+  selectedVehicle = v;
+  document.querySelectorAll('.veh-btn').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+};
+
+window.selectSpace = (n, el) => {
+  selectedSpaces = n;
+  document.querySelectorAll('.sp-btn').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+};
+
+window.submitRide = async () => {
+  const fromVal  = document.getElementById('from-input').value.trim();
+  const toVal    = document.getElementById('to-input').value.trim();
+  const dateVal  = document.getElementById('ride-date').value;
+  const timeVal  = document.getElementById('ride-time').value;
+  const priceVal = parseFloat(document.getElementById('ride-price').value) || 0;
+
+  if (!fromVal || !toVal)       return showToast('⚠️ Enter From & To');
+  if (!selectedVehicle)         return showToast('⚠️ Select a vehicle');
+  if (!selectedSpaces)          return showToast('⚠️ Select available spaces');
+  if (!startPoint || !endPoint) return showToast('⚠️ Drop Start & End on the map');
+
+  const btn = document.getElementById('submit-ride-btn');
+  btn.disabled = true; btn.textContent = 'Posting…';
+
+  try {
+    const ud = userData || {};
+    await addDoc(collection(db, 'rides'), {
+      userId:    currentUser.uid,
+      userName:  currentUser.displayName || 'Driver',
+      userPhone: ud.phone || '',
+      from:      fromVal,
+      to:        toVal,
+      date:      dateVal,
+      time:      timeVal,
+      vehicle:   selectedVehicle,
+      spaces:    selectedSpaces,
+      price:     priceVal,
+      fromLat:   startPoint.lat,
+      fromLon:   startPoint.lng,
+      toLat:     endPoint.lat,
+      toLon:     endPoint.lng,
+      status:    'active',
+      createdAt: serverTimestamp()
+    });
+    showToast('🎉 Ride posted!');
+    showScreen('home-screen');
+    document.getElementById('fab-btn').style.display = 'flex';
+    switchTab('rides', document.getElementById('nav-rides'));
+  } catch (err) {
+    showToast('❌ ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '🚀 Post Ride';
+  }
+};
+
+/* ════════════════════ ADMIN ════════════════════ */
+async function loadAdminData() {
+  const body = document.getElementById('admin-body');
+  body.innerHTML = `<div class="empty-state"><div class="empty-icon">⏳</div><p>Loading users…</p></div>`;
+  try {
+    const snap = await getDocs(collection(db, 'users'));
+    const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const pending = users.filter(u =>
+      u.licenseStatus === 'pending' || u.aadhaarStatus === 'pending' ||
+      u.licenseStatus === 'rejected' || u.aadhaarStatus === 'rejected'
+    );
+
+    if (pending.length === 0) {
+      body.innerHTML = `<div class="empty-state">
+        <div class="empty-icon">✅</div>
+        <p>No pending documents to review!</p>
+      </div>`;
+      return;
+    }
+
+    let html = `<p class="doc-section-label" style="margin-bottom:14px;">
+      Pending Reviews (${pending.length})
+    </p>`;
+
+    pending.forEach(u => {
+      html += `<div class="admin-user-card">
+        <div class="admin-user-name">👤 ${u.name} — ${u.email}</div>`;
+
+      if (u.licenseUrl && u.licenseStatus !== 'verified') {
+        html += `
+          <div class="admin-doc-row">
+            <img class="admin-doc-thumb" src="${u.licenseUrl}" alt="Licence"
+                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22/>'"/>
+            <div class="admin-doc-info">
+              <div class="admin-doc-type">🪪 Driving Licence</div>
+              <div class="admin-doc-status">
+                Status: <b>${u.licenseStatus}</b>
+              </div>
+            </div>
+            <div class="admin-actions">
+              <button class="approve-btn" onclick="adminDecision('${u.id}','license','verified')">
+                ✅
+              </button>
+              <button class="reject-btn" onclick="adminDecision('${u.id}','license','rejected')">
+                ❌
+              </button>
+            </div>
+          </div>`;
+      }
+
+      if (u.aadhaarUrl && u.aadhaarStatus !== 'verified') {
+        html += `
+          <div class="admin-doc-row">
+            <img class="admin-doc-thumb" src="${u.aadhaarUrl}" alt="Aadhaar"
+                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22/>'"/>
+            <div class="admin-doc-info">
+              <div class="admin-doc-type">🪪 Aadhaar Card</div>
+              <div class="admin-doc-status">
+                Status: <b>${u.aadhaarStatus}</b>
+              </div>
+            </div>
+            <div class="admin-actions">
+              <button class="approve-btn" onclick="adminDecision('${u.id}','aadhaar','verified')">
+                ✅
+              </button>
+              <button class="reject-btn" onclick="adminDecision('${u.id}','aadhaar','rejected')">
+                ❌
+              </button>
+            </div>
+          </div>`;
+      }
+      html += `</div>`;
+    });
+    body.innerHTML = html;
+  } catch (e) {
+    body.innerHTML = `<div class="empty-state"><p>❌ Error: ${e.message}</p></div>`;
+  }
+}
+
+window.adminDecision = async (uid, type, decision) => {
+  const field = type === 'license' ? 'licenseStatus' : 'aadhaarStatus';
+  try {
+    await updateDoc(doc(db, 'users', uid), { [field]: decision });
+    showToast(decision === 'verified' ? '✅ Document approved!' : '❌ Document rejected');
+    loadAdminData();
+  } catch (e) { showToast('❌ ' + e.message); }
+};
+
+/* ════════════════════ AUTH STATE BOOT ════════════════════ */
+setAuthState('login');
+
+// splash → turn green after letters finish
+setTimeout(() => {
+  document.querySelectorAll('.letter').forEach(l => l.classList.add('brand-green'));
+}, 2000);
+
+// after splash delay, watch auth
+setTimeout(() => {
+  onAuthStateChanged(auth, user => {
+    if (user && user.emailVerified) {
+      bootHome(user);
+    } else if (user && !user.emailVerified) {
+      showScreen('login-screen');
+      setAuthState('verify-waiting');
+    } else {
+      showScreen('login-screen');
+    }
+  });
+}, 4200);
+</script>
 </body>
 </html>
